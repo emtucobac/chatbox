@@ -47,6 +47,8 @@
 
         <div id="chat-box" class="chat-scroll" role="log" aria-live="polite" aria-relevant="additions"></div>
 
+        <p id="typing-indicator" class="typing-indicator" hidden aria-live="polite" aria-atomic="true"></p>
+
         <footer class="composer">
             <div id="image-preview-wrap" class="image-preview-wrap" hidden>
                 <img id="image-preview" class="image-preview-thumb" alt="Xem trước ảnh">
@@ -88,11 +90,157 @@
 let lastRenderKey = ''
 let pendingImageUrl = null
 
+let typingFalseTimer = null
+let lastTypingPingAt = 0
+const TYPING_THROTTLE_MS = 1200
+
+function sendTypingState(active) {
+    fetch('/typing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ typing: active }),
+    }).catch(function () {})
+}
+
+function scheduleTypingOff() {
+    clearTimeout(typingFalseTimer)
+    typingFalseTimer = setTimeout(function () {
+        typingFalseTimer = null
+        sendTypingState(false)
+    }, 2800)
+}
+
+function bumpComposerTyping() {
+    const now = Date.now()
+    if (now - lastTypingPingAt >= TYPING_THROTTLE_MS) {
+        lastTypingPingAt = now
+        sendTypingState(true)
+    }
+    scheduleTypingOff()
+}
+
+function clearComposerTyping() {
+    clearTimeout(typingFalseTimer)
+    typingFalseTimer = null
+    lastTypingPingAt = 0
+    sendTypingState(false)
+}
+
+async function fetchTypingIndicator() {
+    const response = await fetch('/typing')
+    if (response.status === 401) {
+        window.location.href = '/login'
+        return
+    }
+    if (!response.ok) return
+    const data = await response.json()
+    const users = data.typing || []
+    const el = document.getElementById('typing-indicator')
+    if (!el) return
+    if (!users.length) {
+        el.hidden = true
+        el.textContent = ''
+        el.removeAttribute('aria-label')
+        return
+    }
+    el.hidden = false
+    const label =
+        users.length === 1 ? users[0] + ' · typing…' : users.join(', ') + ' · typing…'
+    el.textContent = label
+    el.setAttribute('aria-label', label)
+}
+
+async function chatPollTick() {
+    await loadMessages()
+    await fetchTypingIndicator()
+}
+
 function safeImageSrc(url) {
     if (!url || typeof url !== 'string') return null
     const u = url.trim()
     if (!/^\/static\/uploads\/[a-f0-9]{32}\.(png|jpe?g|gif|webp)$/i.test(u)) return null
     return u
+}
+
+const REACTION_CHOICES = [
+    { key: 'like', label: 'Thích', emoji: '👍' },
+    { key: 'love', label: 'Yêu thích', emoji: '❤️' },
+    { key: 'angry', label: 'Phẫn nộ', emoji: '😠' },
+]
+
+function reactionsSummaryHtml(msg) {
+    const id = msg.id != null ? String(msg.id).trim() : ''
+    if (!id) return ''
+
+    const rx = msg.reactions && typeof msg.reactions === 'object' ? msg.reactions : {}
+    const parts = []
+    REACTION_CHOICES.forEach(function (opt) {
+        const users = Array.isArray(rx[opt.key]) ? rx[opt.key] : []
+        const n = users.length
+        if (n > 0) {
+            parts.push(
+                '<span class="react-chip-readonly" title="' +
+                    escapeHtml(opt.label) +
+                    '"><span class="react-chip-emoji" aria-hidden="true">' +
+                    opt.emoji +
+                    '</span><span class="react-chip-n">' +
+                    n +
+                    '</span></span>'
+            )
+        }
+    })
+    if (!parts.length) return ''
+    return (
+        '<div class="react-summary-row" aria-label="Đã có cảm xúc trên tin nhắn">' +
+        parts.join('') +
+        '</div>'
+    )
+}
+
+function reactionsBarHtml(msg, currentUsername) {
+    const id = msg.id != null ? String(msg.id).trim() : ''
+    if (!id) return ''
+
+    const rx = msg.reactions && typeof msg.reactions === 'object' ? msg.reactions : {}
+    const me = String(currentUsername || '').trim()
+
+    let html =
+        '<div class="bubble-react-bar bubble-react-picker" data-message-id="' +
+        escapeHtml(id) +
+        '" role="toolbar" aria-label="Chọn cảm xúc cho tin nhắn">'
+
+    REACTION_CHOICES.forEach(function (opt) {
+        const users = Array.isArray(rx[opt.key]) ? rx[opt.key] : []
+        const n = users.length
+        const mine = users.some(function (u) {
+            return String(u || '').trim() === me
+        })
+        const activeClass = mine ? ' react-pill--active' : ''
+        html +=
+            '<button type="button" class="react-pill' +
+            activeClass +
+            '" data-react="' +
+            escapeHtml(opt.key) +
+            '" title="' +
+            escapeHtml(opt.label) +
+            '" aria-label="' +
+            escapeHtml(opt.label + (n ? ' — ' + n + ' người' : '')) +
+            '" aria-pressed="' +
+            (mine ? 'true' : 'false') +
+            '">'
+        html += '<span class="react-emoji" aria-hidden="true">' + opt.emoji + '</span>'
+        if (n > 0) {
+            html += '<span class="react-count">' + n + '</span>'
+        }
+        html += '</button>'
+    })
+
+    html += '</div>'
+    return html
+}
+
+function msgReactionsBlock(msg, me) {
+    return reactionsSummaryHtml(msg) + reactionsBarHtml(msg, me)
 }
 
 function bubbleContentHtml(msg) {
@@ -169,19 +317,25 @@ async function loadMessages() {
 
         if (isMine) {
             row.innerHTML =
-                '<div class="msg-stack mine">' +
+                '<div class="msg-stack mine" tabindex="0" role="group" aria-label="Tin nhắn của bạn">' +
                 '<div class="bubble mine">' +
                 '<span class="bubble-name">' + escapeHtml(uname) + '</span>' +
                 bubbleContentHtml(msg) +
-                '</div></div>'
+                '</div>' +
+                msgReactionsBlock(msg, me) +
+                '</div>'
         } else {
             row.innerHTML =
                 '<span class="avatar" aria-hidden="true">' + escapeHtml(initials(uname)) + '</span>' +
-                '<div class="msg-stack other">' +
+                '<div class="msg-stack other" tabindex="0" role="group" aria-label="Tin nhắn từ ' +
+                escapeHtml(uname) +
+                '">' +
                 '<span class="msg-from">' + escapeHtml(uname) + '</span>' +
                 '<div class="bubble other">' +
                 bubbleContentHtml(msg) +
-                '</div></div>'
+                '</div>' +
+                msgReactionsBlock(msg, me) +
+                '</div>'
         }
         chatBox.appendChild(row)
     })
@@ -195,6 +349,25 @@ document.getElementById('message').addEventListener('keydown', function (e) {
         sendMessage()
     }
 })
+
+;(function composerTypingSetup() {
+    const messageEl = document.getElementById('message')
+    if (!messageEl) return
+
+    messageEl.addEventListener('input', function () {
+        bumpComposerTyping()
+    })
+
+    messageEl.addEventListener('blur', function () {
+        window.setTimeout(function () {
+            const ae = document.activeElement
+            if (ae && typeof ae.closest === 'function' && ae.closest('.composer')) {
+                return
+            }
+            clearComposerTyping()
+        }, 200)
+    })
+})()
 
 ;(function imageAttachSetup() {
     const btn = document.getElementById('image-btn')
@@ -269,6 +442,7 @@ async function sendMessage() {
 
     document.getElementById('message').value = ''
     clearPendingImage()
+    clearComposerTyping()
 
     loadMessages()
 }
@@ -303,8 +477,40 @@ async function resetAllChat() {
     }
 }
 
-setInterval(loadMessages, 1000)
-loadMessages()
+document.addEventListener('click', function (e) {
+    const pill = e.target && e.target.closest ? e.target.closest('.react-pill') : null
+    if (!pill) return
+    const bar = pill.closest('.bubble-react-bar')
+    if (!bar) return
+    const id = bar.getAttribute('data-message-id')
+    const reaction = pill.getAttribute('data-react')
+    if (!id || !reaction) return
+    e.preventDefault()
+    reactToMessage(id, reaction)
+})
+
+async function reactToMessage(messageId, reaction) {
+    try {
+        const response = await fetch(
+            '/messages/' + encodeURIComponent(messageId) + '/react',
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reaction: reaction }),
+            }
+        )
+        if (response.status === 401) {
+            window.location.href = '/login'
+            return
+        }
+        if (!response.ok) return
+        lastRenderKey = ''
+        await loadMessages()
+    } catch (_) {}
+}
+
+setInterval(chatPollTick, 1000)
+chatPollTick()
 
 ;(function emojiPickerSetup() {
     const COMMON_EMOJIS = [

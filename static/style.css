@@ -217,6 +217,21 @@ body {
     border-radius: 8px;
 }
 
+.typing-indicator {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0 18px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    min-height: 1.35em;
+}
+
+.typing-indicator[hidden] {
+    display: none !important;
+}
+
 .empty {
     margin: auto;
     text-align: center;
@@ -296,6 +311,16 @@ body {
     flex-direction: column;
     max-width: 78%;
     min-width: 0;
+}
+
+.msg-stack:focus {
+    outline: none;
+}
+
+.msg-stack:focus-visible {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 3px;
+    border-radius: 14px;
 }
 
 .msg-stack.mine {
@@ -467,6 +492,146 @@ body {
 
 .bubble.mine .bubble-img {
     border-color: rgba(255, 255, 255, 0.22);
+}
+
+.bubble-react-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    max-width: 100%;
+    transition:
+        opacity 0.18s ease,
+        max-height 0.22s ease,
+        margin-top 0.22s ease;
+}
+
+.react-summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    max-width: 100%;
+}
+
+.msg-stack.mine .react-summary-row {
+    justify-content: flex-end;
+}
+
+.msg-stack.other .react-summary-row {
+    justify-content: flex-start;
+}
+
+.react-chip-readonly {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    user-select: none;
+}
+
+.react-chip-emoji {
+    font-size: 0.9rem;
+    line-height: 1;
+}
+
+.react-chip-n {
+    font-variant-numeric: tabular-nums;
+}
+
+.msg-stack.mine .bubble-react-bar {
+    justify-content: flex-end;
+}
+
+.msg-stack.other .bubble-react-bar {
+    justify-content: flex-start;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .msg-row:not(:hover):not(:focus-within) .bubble-react-picker {
+        opacity: 0;
+        max-height: 0;
+        margin-top: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .msg-row:hover .react-summary-row,
+    .msg-row:focus-within .react-summary-row {
+        display: none;
+    }
+
+    .msg-row:hover .bubble-react-picker,
+    .msg-row:focus-within .bubble-react-picker {
+        opacity: 1;
+        max-height: 56px;
+        margin-top: 8px;
+        overflow: visible;
+        pointer-events: auto;
+    }
+}
+
+@media (hover: none), (pointer: coarse) {
+    .react-summary-row {
+        display: none !important;
+    }
+}
+
+.react-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.28);
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    line-height: 1.2;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease,
+        transform 0.12s ease;
+}
+
+.react-pill:hover {
+    border-color: rgba(124, 156, 255, 0.4);
+    color: var(--text);
+    background: rgba(124, 156, 255, 0.12);
+    transform: translateY(-1px);
+}
+
+.react-pill:focus-visible {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 2px;
+}
+
+.react-pill--active {
+    border-color: rgba(124, 156, 255, 0.55);
+    background: rgba(124, 156, 255, 0.2);
+    color: var(--text);
+}
+
+.react-emoji {
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.react-count {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.95;
 }
 
 .composer-inner {
@@ -723,6 +888,16 @@ body {
     margin-top: 20px;
     width: 100%;
     justify-content: center;
+    box-sizing: border-box;
+    padding: 12px 20px;
+    min-height: 46px;
+}
+
+.auth-submit--register {
+    min-height: 52px;
+    padding: 14px 22px;
+    font-size: 0.96rem;
+    border-radius: 15px;
 }
 
 .auth-switch {

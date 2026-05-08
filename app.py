@@ -1,4 +1,4 @@
-"""Chạy nhanh: python app.py (cùng app với run.py / wsgi)."""
+"""Chạy dev: python app.py — production WSGI: wsgi.py."""
 
 from app import create_app
 
