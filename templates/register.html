@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký — Chatbox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="page">
+    <div class="glow glow-a" aria-hidden="true"></div>
+    <div class="glow glow-b" aria-hidden="true"></div>
+
+    <main class="app-card auth-card" aria-label="Đăng ký">
+        <header class="app-header auth-header-only">
+            <div class="brand">
+                <span class="logo" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M8.5 10.5h.01M15.5 10.5h.01M9 15.25c1.2 1.5 3.1 2.25 6 2.25" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <div class="brand-text">
+                    <h1 class="app-title">Chatbox</h1>
+                    <p class="app-subtitle">Tạo tài khoản — tên đăng nhập hiện trong chat</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="auth-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-stack" role="alert">
+                        {% for category, message in messages %}
+                            <p class="flash flash-{{ category }}">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="auth-form" action="{{ url_for('auth.register') }}">
+                <label class="field-label" for="username">Tên đăng nhập</label>
+                <input type="text" id="username" name="username" class="input-name auth-input" autocomplete="username" required minlength="3" maxlength="40">
+
+                <label class="field-label" for="password">Mật khẩu</label>
+                <input type="password" id="password" name="password" class="input-name auth-input" autocomplete="new-password" required minlength="6">
+
+                <label class="field-label" for="confirm">Xác nhận mật khẩu</label>
+                <input type="password" id="confirm" name="confirm" class="input-name auth-input" autocomplete="new-password" required minlength="6">
+
+                <button type="submit" class="btn-send auth-submit">Đăng ký</button>
+            </form>
+
+            <p class="auth-switch">Đã có tài khoản? <a href="{{ url_for('auth.login') }}">Đăng nhập</a></p>
+        </div>
+    </main>
+</div>
+
+</body>
+</html>

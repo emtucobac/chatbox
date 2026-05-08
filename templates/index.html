@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="page">
+    <div class="glow glow-a" aria-hidden="true"></div>
+    <div class="glow glow-b" aria-hidden="true"></div>
+
+    <main class="app-card" aria-label="Ứng dụng chat">
+        <header class="app-header">
+            <div class="brand">
+                <span class="logo" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M8.5 10.5h.01M15.5 10.5h.01M9 15.25c1.2 1.5 3.1 2.25 6 2.25" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                    </svg>
+                </span>
+                <div class="brand-text">
+                    <h1 class="app-title">Chatbox</h1>
+                    <p class="app-subtitle">Trò chuyện realtime qua Flask</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="header-username" title="{{ username }}">{{ username }}</span>
+                <form method="post" action="{{ url_for('auth.logout') }}" class="logout-form">
+                    <button type="submit" class="btn-logout" title="Đăng xuất">Đăng xuất</button>
+                </form>
+                <button type="button" class="btn-reset" onclick="resetAllChat()" title="Xóa toàn bộ tin nhắn">
+                    <span class="btn-reset-inner">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <span>Xóa tất cả</span>
+                    </span>
+                </button>
+            </div>
+        </header>
+
+        <input type="hidden" id="username" value="{{ username }}" autocomplete="off">
+
+        <div id="chat-box" class="chat-scroll" role="log" aria-live="polite" aria-relevant="additions"></div>
+
+        <footer class="composer">
+            <div id="image-preview-wrap" class="image-preview-wrap" hidden>
+                <img id="image-preview" class="image-preview-thumb" alt="Xem trước ảnh">
+                <button type="button" id="image-clear" class="btn-image-clear" title="Bỏ ảnh">×</button>
+            </div>
+            <div class="composer-inner">
+                <input type="file" id="image-input" class="visually-hidden" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="Chọn ảnh gửi kèm">
+                <button type="button" class="btn-attach" id="image-btn" aria-label="Đính kèm ảnh" title="Gửi ảnh">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" aria-hidden="true">
+                        <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+                        <circle cx="8.5" cy="10" r="1.5" fill="currentColor" stroke="none"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 15l-4.5-4.5a2 2 0 00-2.8 0L9 16"/>
+                    </svg>
+                </button>
+                <div class="emoji-anchor">
+                    <button type="button" class="btn-emoji" id="emoji-btn" aria-label="Biểu tượng cảm xúc" aria-expanded="false" aria-haspopup="dialog" aria-controls="emoji-picker" title="Chèn emoji">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9.25"/>
+                            <circle cx="9" cy="10" r="1.1" fill="currentColor" stroke="none"/>
+                            <circle cx="15" cy="10" r="1.1" fill="currentColor" stroke="none"/>
+                            <path stroke-linecap="round" d="M8.25 14.25c1.1 1.8 3.05 3 5.75 3 2.7 0 4.65-1.2 5.75-3"/>
+                        </svg>
+                    </button>
+                    <div id="emoji-picker" class="emoji-panel" hidden role="dialog" aria-label="Danh sách emoji">
+                        <div id="emoji-grid" class="emoji-grid"></div>
+                    </div>
+                </div>
+                <input type="text" id="message" class="input-msg" placeholder="Nhập tin nhắn…" maxlength="2000" aria-label="Nội dung tin nhắn">
+                <button type="button" class="btn-send" onclick="sendMessage()" aria-label="Gửi tin nhắn">
+                    Gửi
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3 21l18-9L3 3l3 9zm0 0h7"/></svg>
+                </button>
+            </div>
+        </footer>
+    </main>
+</div>
+
+<script>
+let lastRenderKey = ''
+let pendingImageUrl = null
+
+function safeImageSrc(url) {
+    if (!url || typeof url !== 'string') return null
+    const u = url.trim()
+    if (!/^\/static\/uploads\/[a-f0-9]{32}\.(png|jpe?g|gif|webp)$/i.test(u)) return null
+    return u
+}
+
+function bubbleContentHtml(msg) {
+    const parts = []
+    const src = safeImageSrc(msg.image_url)
+    if (src) {
+        parts.push(
+            '<img class="bubble-img" src="' + escapeHtml(src) + '" alt="Ảnh đính kèm" loading="lazy">'
+        )
+    }
+    const t = msg.message != null ? String(msg.message).trim() : ''
+    if (t) {
+        parts.push('<p class="bubble-text">' + escapeHtml(t) + '</p>')
+    }
+    if (!parts.length) {
+        parts.push('<p class="bubble-text"><em>(tin trống)</em></p>')
+    }
+    return parts.join('')
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div')
+    div.textContent = text == null ? '' : String(text)
+    return div.innerHTML
+}
+
+function initials(name) {
+    const n = String(name || '?').trim()
+    if (!n) return '?'
+    const parts = n.split(/\s+/)
+    const a = parts[0][0] || '?'
+    const b = parts.length > 1 ? parts[parts.length - 1][0] : ''
+    return (a + b).toUpperCase()
+}
+
+async function loadMessages() {
+    const response = await fetch('/messages')
+    if (response.status === 401) {
+        window.location.href = '/login'
+        return
+    }
+    const messages = await response.json()
+
+    const chatBox = document.getElementById('chat-box')
+    const currentUsername = document.getElementById('username').value
+    const me = currentUsername.trim()
+
+    const renderKey = me + '\0' + JSON.stringify(messages)
+    if (renderKey === lastRenderKey) {
+        return
+    }
+    lastRenderKey = renderKey
+
+    chatBox.innerHTML = ''
+
+    if (!messages.length) {
+        chatBox.innerHTML =
+            '<div class="empty">' +
+            '<div class="empty-icon" aria-hidden="true">' +
+            '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+            '</div>' +
+            '<p class="empty-title">Chưa có tin nhắn</p>' +
+            '<p class="empty-desc">Viết một dòng dưới đây để bắt đầu cuộc trò chuyện.</p>' +
+            '</div>'
+        return
+    }
+
+    messages.forEach((msg) => {
+        const isMine = (msg.username || '').trim() === me
+        const uname = msg.username || 'Ẩn danh'
+
+        const row = document.createElement('div')
+        row.className = 'msg-row ' + (isMine ? 'mine' : 'other')
+
+        if (isMine) {
+            row.innerHTML =
+                '<div class="msg-stack mine">' +
+                '<div class="bubble mine">' +
+                '<span class="bubble-name">' + escapeHtml(uname) + '</span>' +
+                bubbleContentHtml(msg) +
+                '</div></div>'
+        } else {
+            row.innerHTML =
+                '<span class="avatar" aria-hidden="true">' + escapeHtml(initials(uname)) + '</span>' +
+                '<div class="msg-stack other">' +
+                '<span class="msg-from">' + escapeHtml(uname) + '</span>' +
+                '<div class="bubble other">' +
+                bubbleContentHtml(msg) +
+                '</div></div>'
+        }
+        chatBox.appendChild(row)
+    })
+
+    chatBox.scrollTop = chatBox.scrollHeight
+}
+
+document.getElementById('message').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        sendMessage()
+    }
+})
+
+;(function imageAttachSetup() {
+    const btn = document.getElementById('image-btn')
+    const input = document.getElementById('image-input')
+    const wrap = document.getElementById('image-preview-wrap')
+    const prev = document.getElementById('image-preview')
+    const clearBtn = document.getElementById('image-clear')
+    if (!btn || !input || !wrap || !prev || !clearBtn) return
+
+    btn.addEventListener('click', function () {
+        input.click()
+    })
+
+    input.addEventListener('change', function () {
+        const f = input.files && input.files[0]
+        if (!f) {
+            clearPendingImage()
+            return
+        }
+        if (pendingImageUrl) {
+            try {
+                URL.revokeObjectURL(pendingImageUrl)
+            } catch (_) {}
+        }
+        pendingImageUrl = URL.createObjectURL(f)
+        prev.src = pendingImageUrl
+        wrap.hidden = false
+    })
+
+    clearBtn.addEventListener('click', function () {
+        clearPendingImage()
+    })
+})()
+
+async function sendMessage() {
+    const username = document.getElementById('username').value.trim()
+    const message = document.getElementById('message').value.trim()
+    const imageInput = document.getElementById('image-input')
+    const hasFile = imageInput.files && imageInput.files.length > 0
+
+    if (username === '') return
+    if (message === '' && !hasFile) return
+
+    let sendResp
+    if (hasFile) {
+        const fd = new FormData()
+        fd.append('image', imageInput.files[0])
+        if (message !== '') fd.append('message', message)
+        sendResp = await fetch('/send', { method: 'POST', body: fd })
+    } else {
+        sendResp = await fetch('/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: message }),
+        })
+    }
+
+    if (sendResp.status === 401) {
+        window.location.href = '/login'
+        return
+    }
+    if (!sendResp.ok) {
+        let detail = ''
+        try {
+            const j = await sendResp.json()
+            if (j.error === 'bad_image') detail = ' Ảnh không hợp lệ hoặc quá lớn (tối đa 5 MB).'
+            else if (j.error === 'empty') detail = ' Nội dung trống.'
+        } catch (_) {}
+        alert('Không gửi được.' + detail)
+        return
+    }
+
+    document.getElementById('message').value = ''
+    clearPendingImage()
+
+    loadMessages()
+}
+
+function clearPendingImage() {
+    const imageInput = document.getElementById('image-input')
+    const wrap = document.getElementById('image-preview-wrap')
+    const prev = document.getElementById('image-preview')
+    if (pendingImageUrl) {
+        try {
+            URL.revokeObjectURL(pendingImageUrl)
+        } catch (_) {}
+        pendingImageUrl = null
+    }
+    if (imageInput) imageInput.value = ''
+    if (prev) prev.removeAttribute('src')
+    if (wrap) wrap.hidden = true
+}
+
+async function resetAllChat() {
+    if (!confirm('Xóa toàn bộ tin nhắn trên Firebase? Không hoàn tác được.')) return
+    try {
+        const response = await fetch('/reset', { method: 'POST' })
+        if (response.status === 401) {
+            window.location.href = '/login'
+            return
+        }
+        if (!response.ok) throw new Error('HTTP ' + response.status)
+        await loadMessages()
+    } catch (e) {
+        alert('Không reset được: ' + (e.message || e))
+    }
+}
+
+setInterval(loadMessages, 1000)
+loadMessages()
+
+;(function emojiPickerSetup() {
+    const COMMON_EMOJIS = [
+        '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '🙂',
+        '😉', '😍', '🥰', '😘', '😋', '😛', '🤗', '🤔',
+        '😎', '🤩', '🥳', '😇', '😢', '😭', '😤', '🙄',
+        '👍', '👎', '👏', '🙏', '🤝', '💪', '🔥', '💯',
+        '❤️', '🧡', '✨', '⭐', '🎉', '🎊', '🐱', '🐶',
+        '👀', '💬', '🌸', '🌟', '🍕', '☕', '✅', '❌',
+    ]
+
+    const btn = document.getElementById('emoji-btn')
+    const panel = document.getElementById('emoji-picker')
+    const grid = document.getElementById('emoji-grid')
+    const input = document.getElementById('message')
+
+    if (!btn || !panel || !grid || !input) return
+
+    function insertAtCaret(chunk) {
+        const start = typeof input.selectionStart === 'number' ? input.selectionStart : input.value.length
+        const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : input.value.length
+        const before = input.value.slice(0, start)
+        const after = input.value.slice(end)
+        input.value = before + chunk + after
+        const pos = start + chunk.length
+        input.focus()
+        try {
+            input.setSelectionRange(pos, pos)
+        } catch (_) { /* noop */ }
+    }
+
+    function setOpen(open) {
+        panel.hidden = !open
+        btn.setAttribute('aria-expanded', String(open))
+        if (!open) {
+            btn.focus()
+        }
+    }
+
+    COMMON_EMOJIS.forEach(function (em) {
+        const cell = document.createElement('button')
+        cell.type = 'button'
+        cell.className = 'emoji-cell'
+        cell.textContent = em
+        cell.title = em
+        cell.addEventListener('click', function () {
+            insertAtCaret(em)
+            setOpen(false)
+            input.focus()
+        })
+        grid.appendChild(cell)
+    })
+
+    btn.addEventListener('click', function (e) {
+        e.stopPropagation()
+        const open = panel.hidden
+        setOpen(open)
+        if (open) {
+            const firstCell = grid.querySelector('.emoji-cell')
+            if (firstCell) {
+                window.requestAnimationFrame(function () {
+                    try {
+                        firstCell.focus()
+                    } catch (_) {}
+                })
+            }
+        }
+    })
+
+    document.addEventListener('click', function (e) {
+        if (!panel.hidden && !panel.contains(e.target) && !btn.contains(e.target)) {
+            setOpen(false)
+        }
+    })
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !panel.hidden) {
+            e.preventDefault()
+            setOpen(false)
+        }
+    })
+})()
+</script>
+
+</body>
+</html>
