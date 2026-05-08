@@ -4,7 +4,11 @@ import os
 
 
 class Config:
-    """Default app settings. Override via environment when deploying."""
+    """Default app settings. Override via environment when deploying.
+
+    Lưu ý: đừng đặt biến môi trường SERVER_NAME trên Render trừ khi giá trị
+    khớp chính xác host — nếu sai, mọi route có thể trả 404.
+    """
 
     SECRET_KEY = os.environ.get(
         "SECRET_KEY",
