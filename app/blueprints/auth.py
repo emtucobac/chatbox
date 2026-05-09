@@ -27,7 +27,7 @@ def _validate_username(raw: str) -> str | None:
     return u
 
 
-@bp.route("/login", methods=["GET", "POST"])
+@bp.route("/login", methods=["GET", "POST"], strict_slashes=False)
 def login():
     if session.get("user_id"):
         return redirect(url_for("chat.home"))
@@ -44,7 +44,7 @@ def login():
     return render_template("login.html")
 
 
-@bp.route("/register", methods=["GET", "POST"])
+@bp.route("/register", methods=["GET", "POST"], strict_slashes=False)
 def register():
     if session.get("user_id"):
         return redirect(url_for("chat.home"))

@@ -33,7 +33,7 @@ def create_app(config_class: type = Config) -> Flask:
 
     init_db(app)
 
-    @app.get("/healthz")
+    @app.get("/healthz", strict_slashes=False)
     def _healthz():
         return {"status": "ok"}, 200
 
