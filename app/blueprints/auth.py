@@ -64,8 +64,13 @@ def register():
             flash("Mật khẩu xác nhận không khớp.", "error")
         else:
             try:
-                create_user(current_app, username, password)
+                _, firebase_ok = create_user(current_app, username, password)
                 flash("Đăng ký thành công. Hãy đăng nhập.", "success")
+                if not firebase_ok:
+                    flash(
+                        "Không ghi được hồ sơ lên Firebase — chức năng nhóm / «Thêm người» sẽ không thấy tài khoản này. Kiểm tra FIREBASE_USERS_URL và FIREBASE_RTDB_AUTH (hoặc Rules). Sau khi sửa, đăng nhập một lần để thử đồng bộ lại.",
+                        "warning",
+                    )
                 return redirect(url_for("auth.login"))
             except ValueError:
                 flash("Tên đăng nhập này đã được dùng.", "error")

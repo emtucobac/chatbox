@@ -15,80 +15,304 @@
     <div class="glow glow-a" aria-hidden="true"></div>
     <div class="glow glow-b" aria-hidden="true"></div>
 
-    <main class="app-card" aria-label="Ứng dụng chat">
-        <header class="app-header">
-            <div class="brand">
-                <span class="logo" aria-hidden="true">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.5"/>
-                        <path d="M8.5 10.5h.01M15.5 10.5h.01M9 15.25c1.2 1.5 3.1 2.25 6 2.25" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-                    </svg>
-                </span>
-                <div class="brand-text">
-                    <h1 class="app-title">Chatbox</h1>
-                    <p class="app-subtitle">Trò chuyện realtime qua Flask</p>
-                </div>
-            </div>
-            <div class="header-actions">
-                <span class="header-username" title="{{ username }}">{{ username }}</span>
-                <form method="post" action="{{ url_for('auth.logout') }}" class="logout-form">
-                    <button type="submit" class="btn-logout" title="Đăng xuất">Đăng xuất</button>
-                </form>
-                <button type="button" class="btn-reset" onclick="resetAllChat()" title="Xóa toàn bộ tin nhắn">
-                    <span class="btn-reset-inner">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                        <span>Xóa tất cả</span>
-                    </span>
-                </button>
-            </div>
-        </header>
-
-        <input type="hidden" id="username" value="{{ username }}" autocomplete="off">
-
-        <div id="chat-box" class="chat-scroll" role="log" aria-live="polite" aria-relevant="additions"></div>
-
-        <p id="typing-indicator" class="typing-indicator" hidden aria-live="polite" aria-atomic="true"></p>
-
-        <footer class="composer">
-            <div id="image-preview-wrap" class="image-preview-wrap" hidden>
-                <img id="image-preview" class="image-preview-thumb" alt="Xem trước ảnh">
-                <button type="button" id="image-clear" class="btn-image-clear" title="Bỏ ảnh">×</button>
-            </div>
-            <div class="composer-inner">
-                <input type="file" id="image-input" class="visually-hidden" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="Chọn ảnh gửi kèm">
-                <button type="button" class="btn-attach" id="image-btn" aria-label="Đính kèm ảnh" title="Gửi ảnh">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" aria-hidden="true">
-                        <rect x="3" y="5" width="18" height="14" rx="2.5"/>
-                        <circle cx="8.5" cy="10" r="1.5" fill="currentColor" stroke="none"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 15l-4.5-4.5a2 2 0 00-2.8 0L9 16"/>
-                    </svg>
-                </button>
-                <div class="emoji-anchor">
-                    <button type="button" class="btn-emoji" id="emoji-btn" aria-label="Biểu tượng cảm xúc" aria-expanded="false" aria-haspopup="dialog" aria-controls="emoji-picker" title="Chèn emoji">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" aria-hidden="true">
-                            <circle cx="12" cy="12" r="9.25"/>
-                            <circle cx="9" cy="10" r="1.1" fill="currentColor" stroke="none"/>
-                            <circle cx="15" cy="10" r="1.1" fill="currentColor" stroke="none"/>
-                            <path stroke-linecap="round" d="M8.25 14.25c1.1 1.8 3.05 3 5.75 3 2.7 0 4.65-1.2 5.75-3"/>
-                        </svg>
-                    </button>
-                    <div id="emoji-picker" class="emoji-panel" hidden role="dialog" aria-label="Danh sách emoji">
-                        <div id="emoji-grid" class="emoji-grid"></div>
+    <main class="app-card messenger-card" aria-label="Ứng dụng chat">
+        <div class="messenger-layout">
+            <aside class="chat-sidebar" aria-label="Danh sách đoạn chat">
+                <div class="sidebar-head">
+                    <div class="sidebar-brand">
+                        <span class="sidebar-logo" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M8.5 10.5h.01M15.5 10.5h.01M9 15.25c1.2 1.5 3.1 2.25 6 2.25" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                            </svg>
+                        </span>
+                        <span class="sidebar-head-title">Đoạn chat</span>
                     </div>
                 </div>
-                <input type="text" id="message" class="input-msg" placeholder="Nhập tin nhắn…" maxlength="2000" aria-label="Nội dung tin nhắn">
-                <button type="button" class="btn-send" onclick="sendMessage()" aria-label="Gửi tin nhắn">
-                    Gửi
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3 21l18-9L3 3l3 9zm0 0h7"/></svg>
-                </button>
-            </div>
-        </footer>
+
+                <div class="sidebar-user-row">
+                    <span class="sidebar-user-name" title="{{ username }}">{{ username }}</span>
+                    <form method="post" action="{{ url_for('auth.logout') }}" class="logout-form messenger-logout-form">
+                        <button type="submit" class="btn-logout btn-logout--tiny" title="Đăng xuất">Đăng xuất</button>
+                    </form>
+                </div>
+
+                <div class="sidebar-search-shell">
+                    <svg class="sidebar-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M10.5 18a7.5 7.5 0 110-15 7.5 7.5 0 010 15zM16.5 16.5L21 21" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <input type="search" id="thread-search" class="sidebar-search" placeholder="Tìm đoạn chat" autocomplete="off" aria-label="Tìm đoạn chat">
+                </div>
+
+                <nav class="thread-list" aria-label="Chọn chủ đề hội thoại">
+                    <button type="button"
+                        id="btn-new-chat"
+                        class="chat-thread-item chat-thread-item--new"
+                        title="Đoạn chat mới"
+                        aria-label="Thêm đoạn chat — chọn người từ Firebase"
+                        aria-expanded="false"
+                        aria-haspopup="dialog"
+                        aria-controls="new-room-modal">
+                        <span class="thread-avatar thread-avatar--add" aria-hidden="true">
+                            <span class="thread-avatar-plus">+</span>
+                        </span>
+                        <span class="thread-body">
+                            <span class="thread-name">Đoạn chat mới</span>
+                            <span class="thread-preview">Tạo nhóm và mời bạn</span>
+                        </span>
+                    </button>
+                    {% for cid, label, kind, can_delete in chat_channels %}
+                    {% set ln = label[0]|upper if label else '?' %}
+                    <div class="chat-thread-shell">
+                        <button type="button"
+                            class="chat-thread-item{% if cid == current_channel_id %} chat-thread-item--active{% endif %}"
+                            data-channel="{{ cid }}"
+                            data-label="{{ label }}"
+                            data-kind="room"
+                            aria-pressed="{% if cid == current_channel_id %}true{% else %}false{% endif %}"
+                            {% if cid == current_channel_id %}aria-current="page"{% endif %}
+                            aria-label="Đoạn chat {{ label }}">
+                            <span class="thread-avatar thread-avatar--custom" aria-hidden="true">{{ ln }}</span>
+                            <span class="thread-body">
+                                <span class="thread-name">{{ label }}</span>
+                                <span class="thread-preview">Nhóm · nhấn để nhắn</span>
+                            </span>
+                        </button>
+                        {% if can_delete %}
+                        <button type="button"
+                            class="thread-delete-btn"
+                            data-channel="{{ cid }}"
+                            data-label="{{ label }}"
+                            title="Xóa đoạn chat"
+                            aria-label="Xóa đoạn chat {{ label }}">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </nav>
+            </aside>
+
+            <section class="chat-pane" aria-labelledby="pane-chat-title">
+                <header class="chat-pane-header">
+                    <div class="pane-peer">
+                        <span class="pane-avatar {% if current_channel_kind == 'none' %}pane-avatar--empty{% else %}pane-avatar--custom{% endif %}" id="pane-avatar" aria-hidden="true">{% if current_channel_kind == 'none' %}…{% else %}{{ (current_channel_label[0]|upper) if current_channel_label else '?' }}{% endif %}</span>
+                        <div class="pane-peer-text">
+                            <h2 class="pane-title" id="pane-chat-title"><span class="channel-label-strong">{{ current_channel_label }}</span></h2>
+                            <p class="pane-status" id="pane-status">{% if current_channel_kind == 'none' %}Chưa chọn đoạn chat{% else %}Đang hoạt động · realtime{% endif %}</p>
+                        </div>
+                    </div>
+                    <div class="pane-header-actions">
+                        <button type="button" class="pane-add-members btn-add-members" id="pane-add-members-btn" {% if current_channel_kind != 'room' %}hidden{% endif %} title="Thêm người vào nhóm" aria-label="Thêm người vào nhóm">
+                            <span class="btn-add-members-inner">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path stroke-linecap="round" stroke-linejoin="round" d="M20 8v6m3-3h-6"/></svg>
+                                <span class="pane-add-members-label">Thêm người</span>
+                            </span>
+                        </button>
+                        <button type="button" class="btn-reset pane-reset" id="pane-reset-btn" onclick="resetAllChat()" title="Xóa toàn bộ tin nhắn trong chủ đề này" {% if current_channel_kind == 'none' %}disabled{% endif %}>
+                            <span class="btn-reset-inner">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <span class="pane-reset-label">Xóa tất cả</span>
+                            </span>
+                        </button>
+                    </div>
+                </header>
+
+                <input type="hidden" id="username" value="{{ username }}" autocomplete="off">
+                <input type="hidden" id="chat-channel" value="{{ current_channel_id }}" autocomplete="off">
+
+                <div class="pane-feed">
+                    <div id="chat-box" class="chat-scroll messenger-feed" role="log" aria-live="polite" aria-relevant="additions"></div>
+                    <p id="typing-indicator" class="typing-indicator messenger-typing" hidden aria-live="polite" aria-atomic="true"></p>
+                </div>
+
+                <footer class="composer messenger-composer{% if current_channel_kind == 'none' %} composer--blocked{% endif %}" id="composer-footer">
+                    <div id="image-preview-wrap" class="image-preview-wrap" hidden>
+                        <img id="image-preview" class="image-preview-thumb" alt="Xem trước ảnh">
+                        <button type="button" id="image-clear" class="btn-image-clear" title="Bỏ ảnh">×</button>
+                    </div>
+                    <div class="composer-inner">
+                        <input type="file" id="image-input" class="visually-hidden" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="Chọn ảnh gửi kèm">
+                        <button type="button" class="btn-attach" id="image-btn" aria-label="Đính kèm ảnh" title="Gửi ảnh">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" aria-hidden="true">
+                                <rect x="3" y="5" width="18" height="14" rx="2.5"/>
+                                <circle cx="8.5" cy="10" r="1.5" fill="currentColor" stroke="none"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 15l-4.5-4.5a2 2 0 00-2.8 0L9 16"/>
+                            </svg>
+                        </button>
+                        <div class="emoji-anchor">
+                            <button type="button" class="btn-emoji" id="emoji-btn" aria-label="Biểu tượng cảm xúc" aria-expanded="false" aria-haspopup="dialog" aria-controls="emoji-picker" title="Chèn emoji">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9.25"/>
+                                    <circle cx="9" cy="10" r="1.1" fill="currentColor" stroke="none"/>
+                                    <circle cx="15" cy="10" r="1.1" fill="currentColor" stroke="none"/>
+                                    <path stroke-linecap="round" d="M8.25 14.25c1.1 1.8 3.05 3 5.75 3 2.7 0 4.65-1.2 5.75-3"/>
+                                </svg>
+                            </button>
+                            <div id="emoji-picker" class="emoji-panel" hidden role="dialog" aria-label="Danh sách emoji">
+                                <div id="emoji-grid" class="emoji-grid"></div>
+                            </div>
+                        </div>
+                        <input type="text" id="message" class="input-msg" placeholder="Nhập tin nhắn…" maxlength="2000" aria-label="Nội dung tin nhắn">
+                        <button type="button" class="btn-send" onclick="sendMessage()" aria-label="Gửi tin nhắn">
+                            Gửi
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3 21l18-9L3 3l3 9zm0 0h7"/></svg>
+                        </button>
+                    </div>
+                </footer>
+            </section>
+        </div>
     </main>
+
+    <div id="new-room-modal" class="new-room-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="new-room-heading" aria-modal="true">
+        <div class="new-room-modal__backdrop" data-modal-dismiss tabindex="-1" aria-hidden="true"></div>
+        <div class="new-room-modal__sheet">
+            <h2 class="new-room-modal__title" id="new-room-heading">Đoạn chat mới</h2>
+            <label class="new-room-modal__label" for="new-room-title-input">Tên nhóm <span class="new-room-opt">(tuỳ chọn)</span></label>
+            <input type="text" id="new-room-title-input" class="new-room-modal__input" maxlength="100" placeholder="Ví dụ: Deadline thứ 6" autocomplete="off">
+            <p class="new-room-modal__hint">Chọn ít nhất một người — danh sách gộp tài khoản trên Firebase và trong SQLite (máy chủ):</p>
+            <div id="new-room-user-list" class="new-room-user-list" role="group" aria-label="Chọn người tham gia"></div>
+            <p id="new-room-error" class="new-room-modal__error" hidden></p>
+            <div class="new-room-modal__actions">
+                <button type="button" class="btn-modal-cancel" id="new-room-cancel">Huỷ</button>
+                <button type="button" class="btn-modal-submit" id="new-room-submit">Tạo đoạn chat</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="delete-room-modal" class="new-room-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="delete-room-heading" aria-modal="true">
+        <div class="new-room-modal__backdrop" data-delete-modal-dismiss tabindex="-1" aria-hidden="true"></div>
+        <div class="new-room-modal__sheet">
+            <h2 class="new-room-modal__title" id="delete-room-heading">Xóa đoạn chat</h2>
+            <p class="new-room-modal__hint delete-room-modal__explain">Chỉ người tạo nhóm mới xóa được. Nhập đúng tên đoạn chat (sau khi bỏ khoảng trắng đầu cuối) như hiển thị bên dưới:</p>
+            <p class="delete-room-modal__expected" aria-live="polite"><span id="delete-room-expected"></span></p>
+            <label class="new-room-modal__label" for="delete-room-confirm-input">Xác nhận tên</label>
+            <input type="text" id="delete-room-confirm-input" class="new-room-modal__input" autocomplete="off">
+            <p id="delete-room-error" class="new-room-modal__error" hidden></p>
+            <div class="new-room-modal__actions">
+                <button type="button" class="btn-modal-cancel" id="delete-room-cancel">Huỷ</button>
+                <button type="button" class="btn-modal-submit btn-modal-submit--danger" id="delete-room-submit" disabled>Xóa vĩnh viễn</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-members-modal" class="new-room-modal" hidden aria-hidden="true" role="dialog" aria-labelledby="add-members-heading" aria-modal="true">
+        <div class="new-room-modal__backdrop" data-add-members-dismiss tabindex="-1" aria-hidden="true"></div>
+        <div class="new-room-modal__sheet">
+            <h2 class="new-room-modal__title" id="add-members-heading">Thêm người vào nhóm</h2>
+            <p class="new-room-modal__hint">Chọn người chưa trong nhóm — hiển thị mọi tài khoản có trong SQLite của máy chủ và/hoặc trên Firebase. Mọi thành viên trong nhóm đều có thể thêm người.</p>
+            <div id="add-members-user-list" class="new-room-user-list" role="group" aria-label="Chọn người thêm vào nhóm"></div>
+            <p id="add-members-error" class="new-room-modal__error" hidden></p>
+            <div class="new-room-modal__actions">
+                <button type="button" class="btn-modal-cancel" id="add-members-cancel">Huỷ</button>
+                <button type="button" class="btn-modal-submit" id="add-members-submit">Thêm vào nhóm</button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
 let lastRenderKey = ''
 let pendingImageUrl = null
+
+function getChatChannelId() {
+    const el = document.getElementById('chat-channel')
+    return el ? String(el.value || '').trim().toLowerCase() : ''
+}
+
+const EMPTY_PANE_LABEL = 'Chưa có đoạn chat'
+
+function setComposerBlocked(blocked) {
+    const footer = document.getElementById('composer-footer')
+    const paneReset = document.getElementById('pane-reset-btn')
+    if (footer) footer.classList.toggle('composer--blocked', blocked)
+    if (paneReset) paneReset.disabled = blocked
+}
+
+function updateChannelUiActive(channelId) {
+    const id = String(channelId || '').trim().toLowerCase()
+    let activeKind = 'room'
+    document.querySelectorAll('.chat-thread-item').forEach(function (btn) {
+        const cid = (btn.getAttribute('data-channel') || '').trim().toLowerCase()
+        const on = Boolean(id) && cid === id
+        btn.classList.toggle('chat-thread-item--active', on)
+        btn.setAttribute('aria-pressed', String(on))
+        if (on) {
+            btn.setAttribute('aria-current', 'page')
+            activeKind = (btn.getAttribute('data-kind') || 'room').trim()
+        } else {
+            btn.removeAttribute('aria-current')
+        }
+    })
+    let label = ''
+    document.querySelectorAll('.chat-thread-item').forEach(function (btn) {
+        if ((btn.getAttribute('data-channel') || '').trim().toLowerCase() === id)
+            label = (btn.getAttribute('data-label') || '').trim()
+    })
+    const strong = document.querySelector('.channel-label-strong')
+    if (strong) {
+        if (!id) strong.textContent = EMPTY_PANE_LABEL
+        else if (label) strong.textContent = label
+    }
+    const paneAv = document.getElementById('pane-avatar')
+    if (paneAv) {
+        if (!id) {
+            paneAv.textContent = '…'
+            paneAv.className = 'pane-avatar pane-avatar--empty'
+        } else if (label) {
+            const letter = label.charAt(0).toUpperCase()
+            paneAv.textContent = letter
+            paneAv.className =
+                activeKind === 'room' ? 'pane-avatar pane-avatar--custom' : 'pane-avatar pane-avatar--custom'
+        }
+    }
+    const st = document.getElementById('pane-status')
+    if (st) st.textContent = !id ? 'Chưa chọn đoạn chat' : 'Đang hoạt động · realtime'
+    const addMembersBtn = document.getElementById('pane-add-members-btn')
+    if (addMembersBtn) addMembersBtn.hidden = !id
+    setComposerBlocked(!id)
+}
+
+async function selectChatChannel(channelId) {
+    const id = String(channelId || '').trim().toLowerCase()
+    if (!id || id === getChatChannelId()) return
+
+    clearComposerTyping()
+    clearTimeout(typingFalseTimer)
+    typingFalseTimer = null
+
+    try {
+        const response = await fetch('/channel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channel: id }),
+        })
+        if (response.status === 401) {
+            window.location.href = '/login'
+            return
+        }
+        if (!response.ok) return
+        const data = await response.json().catch(function () {
+            return {}
+        })
+        const ch = data.channel || id
+        const hidden = document.getElementById('chat-channel')
+        if (hidden) hidden.value = ch
+        updateChannelUiActive(ch)
+        lastRenderKey = ''
+        await loadMessages()
+        await fetchTypingIndicator()
+    } catch (_) {}
+}
+
+document.addEventListener('click', function (e) {
+    const pill = e.target && e.target.closest ? e.target.closest('.chat-thread-item') : null
+    if (!pill) return
+    const cid = pill.getAttribute('data-channel')
+    if (!cid) return
+    e.preventDefault()
+    selectChatChannel(cid)
+})
 
 let typingFalseTimer = null
 let lastTypingPingAt = 0
@@ -267,6 +491,135 @@ function escapeHtml(text) {
     return div.innerHTML
 }
 
+let lastChannelsKey = ''
+
+function buildChatThreadButton(cidRaw, lblRaw, kindRaw) {
+    const cid = String(cidRaw || '').trim().toLowerCase()
+    const lbl = String(lblRaw || '').trim()
+    const k = 'room'
+    if (!cid) return null
+    const letter = lbl ? lbl.charAt(0).toUpperCase() : '?'
+    const avClass = k === 'room' ? 'thread-avatar thread-avatar--custom' : 'thread-avatar thread-avatar--' + cid
+    const prevText = k === 'room' ? 'Nhóm · nhấn để nhắn' : 'Nhấn để nhắn tin'
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'chat-thread-item'
+    btn.setAttribute('data-channel', cid)
+    btn.setAttribute('data-label', lbl)
+    btn.setAttribute('data-kind', k)
+    btn.setAttribute('aria-label', 'Đoạn chat ' + lbl)
+    btn.setAttribute('aria-pressed', 'false')
+    btn.innerHTML =
+        '<span class="' +
+        escapeHtml(avClass) +
+        '" aria-hidden="true">' +
+        escapeHtml(letter) +
+        '</span>' +
+        '<span class="thread-body">' +
+        '<span class="thread-name">' +
+        escapeHtml(lbl) +
+        '</span>' +
+        '<span class="thread-preview">' +
+        escapeHtml(prevText) +
+        '</span>' +
+        '</span>'
+    return btn
+}
+
+function buildChatThreadShell(cidRaw, lblRaw, kindRaw, canDeleteRaw) {
+    const btn = buildChatThreadButton(cidRaw, lblRaw, kindRaw)
+    if (!btn) return null
+    const shell = document.createElement('div')
+    shell.className = 'chat-thread-shell'
+    shell.appendChild(btn)
+    if (canDeleteRaw) {
+        const del = document.createElement('button')
+        del.type = 'button'
+        del.className = 'thread-delete-btn'
+        del.setAttribute('data-channel', btn.getAttribute('data-channel') || '')
+        del.setAttribute('data-label', btn.getAttribute('data-label') || '')
+        del.title = 'Xóa đoạn chat'
+        del.setAttribute(
+            'aria-label',
+            'Xóa đoạn chat ' + String(btn.getAttribute('data-label') || '').trim()
+        )
+        del.innerHTML =
+            '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
+        shell.appendChild(del)
+    }
+    return shell
+}
+
+function applyThreadSearchFilter() {
+    const input = document.getElementById('thread-search')
+    const q = input ? input.value.trim().toLowerCase() : ''
+    document.querySelectorAll('.chat-thread-shell').forEach(function (shell) {
+        const btn = shell.querySelector('.chat-thread-item')
+        if (!btn) return
+        const label = (btn.getAttribute('data-label') || '').toLowerCase()
+        const cid = (btn.getAttribute('data-channel') || '').toLowerCase()
+        const show = !q || label.includes(q) || cid.includes(q)
+        shell.style.display = show ? '' : 'none'
+    })
+}
+
+async function syncThreadListFromServer() {
+    const nav = document.querySelector('.thread-list')
+    const newBtn = nav ? nav.querySelector('.chat-thread-item--new') : null
+    if (!nav || !newBtn) return
+    try {
+        const r = await fetch('/channels')
+        if (r.status === 401) {
+            window.location.href = '/login'
+            return
+        }
+        if (!r.ok) return
+        const data = await r.json().catch(function () {
+            return {}
+        })
+        const arr = Array.isArray(data.channels) ? data.channels : []
+        const key = JSON.stringify(arr)
+        if (key === lastChannelsKey) return
+        lastChannelsKey = key
+
+        const current = getChatChannelId()
+        nav.querySelectorAll('.chat-thread-shell').forEach(function (el) {
+            el.remove()
+        })
+        const frag = document.createDocumentFragment()
+        arr.forEach(function (ch) {
+            const id = String(ch.id || '').trim().toLowerCase()
+            const lab = String(ch.label || '').trim()
+            const kind = 'room'
+            const canDel = !!ch.can_delete
+            if (!id) return
+            const shell = buildChatThreadShell(id, lab, kind, canDel)
+            if (shell) frag.appendChild(shell)
+        })
+        nav.insertBefore(frag, newBtn.nextSibling)
+
+        updateChannelUiActive(current)
+        applyThreadSearchFilter()
+    } catch (_) { /* noop */ }
+}
+
+function captureChannelsKeyFromDom() {
+    const arr = []
+    document.querySelectorAll('.chat-thread-shell').forEach(function (shell) {
+        const btn = shell.querySelector('.chat-thread-item')
+        if (!btn) return
+        const id = String(btn.getAttribute('data-channel') || '').trim().toLowerCase()
+        if (!id) return
+        arr.push({
+            id: id,
+            label: String(btn.getAttribute('data-label') || '').trim(),
+            kind: 'room',
+            can_delete: !!shell.querySelector('.thread-delete-btn'),
+        })
+    })
+    lastChannelsKey = JSON.stringify(arr)
+}
+
 function initials(name) {
     const n = String(name || '?').trim()
     if (!n) return '?'
@@ -288,7 +641,7 @@ async function loadMessages() {
     const currentUsername = document.getElementById('username').value
     const me = currentUsername.trim()
 
-    const renderKey = me + '\0' + JSON.stringify(messages)
+    const renderKey = me + '\0' + getChatChannelId() + '\0' + JSON.stringify(messages)
     if (renderKey === lastRenderKey) {
         return
     }
@@ -297,13 +650,20 @@ async function loadMessages() {
     chatBox.innerHTML = ''
 
     if (!messages.length) {
+        const noChannel = !getChatChannelId()
         chatBox.innerHTML =
             '<div class="empty">' +
             '<div class="empty-icon" aria-hidden="true">' +
             '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
             '</div>' +
-            '<p class="empty-title">Chưa có tin nhắn</p>' +
-            '<p class="empty-desc">Viết một dòng dưới đây để bắt đầu cuộc trò chuyện.</p>' +
+            '<p class="empty-title">' +
+            (noChannel ? 'Chưa có đoạn chat' : 'Chưa có tin nhắn') +
+            '</p>' +
+            '<p class="empty-desc">' +
+            (noChannel
+                ? 'Nhấn «Đoạn chat mới» để tạo nhóm và mời người.'
+                : 'Viết một dòng dưới đây để bắt đầu cuộc trò chuyện.') +
+            '</p>' +
             '</div>'
         return
     }
@@ -409,6 +769,10 @@ async function sendMessage() {
     const hasFile = imageInput.files && imageInput.files.length > 0
 
     if (username === '') return
+    if (!getChatChannelId()) {
+        alert('Hãy tạo hoặc chọn một đoạn chat trước.')
+        return
+    }
     if (message === '' && !hasFile) return
 
     let sendResp
@@ -435,6 +799,7 @@ async function sendMessage() {
             const j = await sendResp.json()
             if (j.error === 'bad_image') detail = ' Ảnh không hợp lệ hoặc quá lớn (tối đa 5 MB).'
             else if (j.error === 'empty') detail = ' Nội dung trống.'
+            else if (j.error === 'no_channel') detail = ' Chưa chọn đoạn chat.'
         } catch (_) {}
         alert('Không gửi được.' + detail)
         return
@@ -463,7 +828,15 @@ function clearPendingImage() {
 }
 
 async function resetAllChat() {
-    if (!confirm('Xóa toàn bộ tin nhắn trên Firebase? Không hoàn tác được.')) return
+    if (!getChatChannelId()) {
+        alert('Chưa có đoạn chat để xóa tin nhắn.')
+        return
+    }
+    let topic = ''
+    const strong = document.querySelector('.channel-label-strong')
+    if (strong && strong.textContent) topic = ' (' + strong.textContent.trim() + ')'
+    if (!confirm('Xóa toàn bộ tin nhắn trong chủ đề này' + topic + ' trên Firebase? Không hoàn tác được.'))
+        return
     try {
         const response = await fetch('/reset', { method: 'POST' })
         if (response.status === 401) {
@@ -510,7 +883,10 @@ async function reactToMessage(messageId, reaction) {
 }
 
 setInterval(chatPollTick, 1000)
+setInterval(syncThreadListFromServer, 2000)
 chatPollTick()
+captureChannelsKeyFromDom()
+syncThreadListFromServer()
 
 ;(function emojiPickerSetup() {
     const COMMON_EMOJIS = [
@@ -588,6 +964,493 @@ chatPollTick()
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && !panel.hidden) {
+            e.preventDefault()
+            setOpen(false)
+        }
+    })
+})()
+
+;(function threadSearchSetup() {
+    const input = document.getElementById('thread-search')
+    if (!input) return
+    input.addEventListener('input', function () {
+        applyThreadSearchFilter()
+    })
+})()
+
+function appendThreadRowIfMissing(channelId, label, kind, canDelete) {
+    const cid = String(channelId || '').trim().toLowerCase()
+    const lbl = String(label || '').trim()
+    const k = 'room'
+    const cd = !!canDelete
+    if (!cid) return
+    const nav = document.querySelector('.thread-list')
+    if (!nav) return
+    const esc = cid.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    if (nav.querySelector('.chat-thread-shell .chat-thread-item[data-channel="' + esc + '"]')) return
+    const shell = buildChatThreadShell(cid, lbl, k, cd)
+    if (!shell) return
+    let anchorShell = null
+    nav.querySelectorAll('.chat-thread-shell').forEach(function (s) {
+        const b = s.querySelector('.chat-thread-item[data-kind="room"]')
+        if (b && !anchorShell) anchorShell = s
+    })
+    if (anchorShell) nav.insertBefore(shell, anchorShell)
+    else nav.appendChild(shell)
+}
+
+;(function addMembersModalSetup() {
+    const modal = document.getElementById('add-members-modal')
+    const btnOpen = document.getElementById('pane-add-members-btn')
+    const cancel = document.getElementById('add-members-cancel')
+    const submit = document.getElementById('add-members-submit')
+    const list = document.getElementById('add-members-user-list')
+    const errEl = document.getElementById('add-members-error')
+    if (!modal || !btnOpen || !list) return
+
+    function setErr(msg) {
+        if (!errEl) return
+        if (msg) {
+            errEl.textContent = msg
+            errEl.hidden = false
+        } else {
+            errEl.textContent = ''
+            errEl.hidden = true
+        }
+    }
+
+    function setOpen(open) {
+        modal.hidden = !open
+        modal.setAttribute('aria-hidden', String(!open))
+    }
+
+    function renderPicker(users) {
+        list.innerHTML = ''
+        if (!users.length) {
+            list.innerHTML =
+                '<p class="new-room-empty">Không còn ai để thêm — họ đã trong nhóm hoặc chưa có tài khoản trên server này.</p>'
+            return
+        }
+        users.forEach(function (u) {
+            const uid = parseInt(u.id, 10)
+            if (!uid) return
+            const uname = escapeHtml(String(u.username != null ? u.username : '?'))
+            const lab = document.createElement('label')
+            lab.className = 'new-room-user-row'
+            lab.innerHTML =
+                '<input type="checkbox" class="add-members-cb" data-member-id="' +
+                uid +
+                '" value="' +
+                uid +
+                '">' +
+                '<span class="new-room-user-meta">' +
+                '<span class="new-room-un">' +
+                uname +
+                '</span>' +
+                '<span class="new-room-id">#' +
+                uid +
+                '</span></span>'
+            list.appendChild(lab)
+        })
+    }
+
+    async function refreshPicker() {
+        const rid = getChatChannelId()
+        if (!rid) {
+            list.innerHTML = '<p class="new-room-empty">Chưa chọn đoạn chat.</p>'
+            return
+        }
+        list.innerHTML = '<p class="new-room-loading">Đang tải danh sách…</p>'
+        try {
+            const response = await fetch(
+                '/rooms/eligible-members?room_id=' + encodeURIComponent(rid)
+            )
+            if (response.status === 401) {
+                window.location.href = '/login'
+                return
+            }
+            if (response.status === 403 || response.status === 404) {
+                list.innerHTML =
+                    '<p class="new-room-empty">Bạn không có quyền thêm người vào đoạn chat này.</p>'
+                return
+            }
+            if (!response.ok) {
+                list.innerHTML =
+                    '<p class="new-room-empty">Không tải được danh sách. Thử lại sau.</p>'
+                return
+            }
+            const data = await response.json().catch(function () {
+                return {}
+            })
+            const users = Array.isArray(data.users) ? data.users : []
+            renderPicker(users)
+        } catch (_) {
+            list.innerHTML = '<p class="new-room-empty">Lỗi mạng. Kiểm tra kết nối.</p>'
+        }
+    }
+
+    btnOpen.addEventListener('click', async function () {
+        if (!getChatChannelId()) return
+        setErr('')
+        setOpen(true)
+        await refreshPicker()
+    })
+
+    modal.addEventListener('click', function (e) {
+        if (e.target && e.target.getAttribute && e.target.getAttribute('data-add-members-dismiss') != null)
+            setOpen(false)
+    })
+
+    if (cancel) cancel.addEventListener('click', function () { setOpen(false) })
+
+    if (submit) {
+        submit.addEventListener('click', async function () {
+            setErr('')
+            const rid = getChatChannelId()
+            if (!rid) return
+            const checks = modal.querySelectorAll('.add-members-cb:checked')
+            const ids = []
+            checks.forEach(function (c) {
+                const v = parseInt(c.getAttribute('data-member-id') || c.value, 10)
+                if (v && ids.indexOf(v) === -1) ids.push(v)
+            })
+            if (!ids.length) {
+                setErr('Hãy chọn ít nhất một người.')
+                return
+            }
+            try {
+                submit.disabled = true
+                const response = await fetch('/rooms/members', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ room_id: rid, member_ids: ids }),
+                })
+                if (response.status === 401) {
+                    window.location.href = '/login'
+                    return
+                }
+                const payload = await response.json().catch(function () {
+                    return {}
+                })
+                if (!response.ok) {
+                    if (payload.detail) setErr(String(payload.detail))
+                    else if (payload.error === 'no_new_members')
+                        setErr(String(payload.detail || 'Chọn ít nhất một người chưa có trong nhóm.'))
+                    else if (payload.error === 'forbidden') setErr('Bạn không phải thành viên nhóm này.')
+                    else setErr('Không thêm được. Thử lại.')
+                    return
+                }
+                setOpen(false)
+                lastChannelsKey = ''
+                await syncThreadListFromServer()
+            } catch (_) {
+                setErr('Lỗi mạng. Thử lại.')
+            } finally {
+                submit.disabled = false
+            }
+        })
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal && !modal.hidden) {
+            e.preventDefault()
+            setOpen(false)
+        }
+    })
+})()
+
+;(function deleteRoomModalSetup() {
+    const modal = document.getElementById('delete-room-modal')
+    const cancel = document.getElementById('delete-room-cancel')
+    const submit = document.getElementById('delete-room-submit')
+    const inp = document.getElementById('delete-room-confirm-input')
+    const expEl = document.getElementById('delete-room-expected')
+    const errEl = document.getElementById('delete-room-error')
+    if (!modal || !inp || !submit || !expEl) return
+
+    let pendingRoomId = ''
+    let expectedTitle = ''
+
+    function setErr(msg) {
+        if (!errEl) return
+        if (msg) {
+            errEl.textContent = msg
+            errEl.hidden = false
+        } else {
+            errEl.textContent = ''
+            errEl.hidden = true
+        }
+    }
+
+    function syncSubmitEnabled() {
+        submit.disabled = inp.value.trim() !== expectedTitle.trim()
+    }
+
+    function setOpen(open) {
+        modal.hidden = !open
+        modal.setAttribute('aria-hidden', String(!open))
+        if (!open) {
+            pendingRoomId = ''
+            expectedTitle = ''
+            inp.value = ''
+            expEl.textContent = ''
+            setErr('')
+            submit.disabled = true
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        const delBtn = e.target && e.target.closest ? e.target.closest('.thread-delete-btn') : null
+        if (!delBtn) return
+        e.preventDefault()
+        e.stopPropagation()
+        const cid = String(delBtn.getAttribute('data-channel') || '').trim().toLowerCase()
+        const lbl = delBtn.getAttribute('data-label') || ''
+        pendingRoomId = cid
+        expectedTitle = String(lbl || '').trim()
+        expEl.textContent = expectedTitle
+        inp.value = ''
+        setErr('')
+        syncSubmitEnabled()
+        modal.hidden = false
+        modal.setAttribute('aria-hidden', 'false')
+        window.setTimeout(function () {
+            try {
+                inp.focus()
+            } catch (_) {}
+        }, 50)
+    })
+
+    modal.addEventListener('click', function (e) {
+        if (e.target && e.target.getAttribute && e.target.getAttribute('data-delete-modal-dismiss') != null)
+            setOpen(false)
+    })
+
+    if (cancel) cancel.addEventListener('click', function () { setOpen(false) })
+
+    inp.addEventListener('input', syncSubmitEnabled)
+
+    if (submit) {
+        submit.addEventListener('click', async function () {
+            setErr('')
+            if (!pendingRoomId || inp.value.trim() !== expectedTitle.trim()) return
+            try {
+                submit.disabled = true
+                const response = await fetch('/rooms/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        room_id: pendingRoomId,
+                        confirm_title: inp.value,
+                    }),
+                })
+                if (response.status === 401) {
+                    window.location.href = '/login'
+                    return
+                }
+                const payload = await response.json().catch(function () {
+                    return {}
+                })
+                if (!response.ok) {
+                    if (payload.error === 'title_mismatch')
+                        setErr('Tên không khớp với đoạn chat trên máy chủ. Kiểm tra chính xác (đã bỏ khoảng trắng đầu cuối).')
+                    else if (payload.error === 'forbidden') setErr('Bạn không phải người tạo đoạn chat này.')
+                    else if (payload.error === 'not_found') setErr('Đoạn chat không còn tồn tại.')
+                    else setErr('Không xóa được. Thử lại.')
+                    syncSubmitEnabled()
+                    return
+                }
+                const switchTo = String(payload.switch_to || '').trim().toLowerCase()
+                setOpen(false)
+                lastChannelsKey = ''
+                if (switchTo) {
+                    await syncThreadListFromServer()
+                    await selectChatChannel(switchTo)
+                } else {
+                    const hidden = document.getElementById('chat-channel')
+                    if (hidden) hidden.value = ''
+                    await syncThreadListFromServer()
+                    updateChannelUiActive('')
+                    lastRenderKey = ''
+                    await loadMessages()
+                    await fetchTypingIndicator()
+                }
+            } catch (_) {
+                setErr('Lỗi mạng. Thử lại.')
+                syncSubmitEnabled()
+            }
+        })
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal && !modal.hidden) {
+            e.preventDefault()
+            setOpen(false)
+        }
+    })
+})()
+
+;(function newRoomModalSetup() {
+    const modal = document.getElementById('new-room-modal')
+    const btnOpen = document.getElementById('btn-new-chat')
+    const cancel = document.getElementById('new-room-cancel')
+    const submit = document.getElementById('new-room-submit')
+    const titleInput = document.getElementById('new-room-title-input')
+    const list = document.getElementById('new-room-user-list')
+    const errEl = document.getElementById('new-room-error')
+
+    if (!modal || !btnOpen) return
+
+    function setModalError(msg) {
+        if (!errEl) return
+        if (msg) {
+            errEl.textContent = msg
+            errEl.hidden = false
+        } else {
+            errEl.textContent = ''
+            errEl.hidden = true
+        }
+    }
+
+    function setOpen(open) {
+        modal.hidden = !open
+        modal.setAttribute('aria-hidden', String(!open))
+        if (open) {
+            btnOpen.setAttribute('aria-expanded', 'true')
+            window.setTimeout(function () {
+                if (titleInput) titleInput.focus()
+            }, 50)
+        } else {
+            btnOpen.setAttribute('aria-expanded', 'false')
+        }
+    }
+
+    function renderPicker(users) {
+        if (!list) return
+        list.innerHTML = ''
+        if (!users.length) {
+            list.innerHTML =
+                '<p class="new-room-empty">Không có tài khoản nào khác trên Firebase. Họ cần đăng ký để đồng bộ lên cơ sở dữ liệu.</p>'
+            return
+        }
+        users.forEach(function (u) {
+            const uid = parseInt(u.id, 10)
+            if (!uid) return
+            const uname = escapeHtml(String(u.username != null ? u.username : '?'))
+            const lab = document.createElement('label')
+            lab.className = 'new-room-user-row'
+            lab.innerHTML =
+                '<input type="checkbox" class="new-room-cb" data-member-id="' +
+                uid +
+                '" value="' +
+                uid +
+                '">' +
+                '<span class="new-room-user-meta">' +
+                '<span class="new-room-un">' +
+                uname +
+                '</span>' +
+                '<span class="new-room-id">#' +
+                uid +
+                '</span></span>'
+            list.appendChild(lab)
+        })
+    }
+
+    async function refreshPicker() {
+        if (!list) return
+        list.innerHTML = '<p class="new-room-loading">Đang tải danh sách…</p>'
+        try {
+            const response = await fetch('/firebase-users')
+            if (response.status === 401) {
+                window.location.href = '/login'
+                return
+            }
+            const data = await response.json().catch(function () {
+                return {}
+            })
+            const users = Array.isArray(data.users) ? data.users : []
+            renderPicker(users)
+        } catch (_) {
+            list.innerHTML = '<p class="new-room-empty">Không tải được danh sách. Kiểm tra kết nối hoặc cấu hình Firebase.</p>'
+        }
+    }
+
+    btnOpen.addEventListener('click', async function () {
+        setModalError('')
+        setOpen(true)
+        if (titleInput) titleInput.value = ''
+        await refreshPicker()
+    })
+
+    modal.addEventListener('click', function (e) {
+        if (e.target && e.target.getAttribute && e.target.getAttribute('data-modal-dismiss') != null)
+            setOpen(false)
+    })
+
+    if (cancel) cancel.addEventListener('click', function () { setOpen(false) })
+
+    if (submit) {
+        submit.addEventListener('click', async function () {
+            setModalError('')
+            const checks = modal.querySelectorAll('.new-room-cb:checked')
+            const ids = []
+            checks.forEach(function (c) {
+                const v = parseInt(c.getAttribute('data-member-id') || c.value, 10)
+                if (v && ids.indexOf(v) === -1) ids.push(v)
+            })
+            if (!ids.length) {
+                setModalError('Hãy chọn ít nhất một người.')
+                return
+            }
+            const titleRaw = titleInput ? titleInput.value.trim() : ''
+            try {
+                submit.disabled = true
+                const response = await fetch('/rooms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: titleRaw, member_ids: ids }),
+                })
+                if (response.status === 401) {
+                    window.location.href = '/login'
+                    return
+                }
+                const payload = await response.json().catch(function () { return {} })
+                if (!response.ok) {
+                    if (payload.error === 'firebase_save') {
+                        const st = payload.http_status
+                        const fb = payload.firebase_body ? String(payload.firebase_body) : ''
+                        const perm =
+                            st === 401 ||
+                            st === 403 ||
+                            /permission|denied|unauthorized/i.test(fb)
+                        let msg = 'Không ghi được lên Firebase.'
+                        if (payload.detail === 'network')
+                            msg = 'Lỗi mạng khi gọi Firebase. Kiểm tra kết nối.'
+                        else if (perm)
+                            msg =
+                                'Firebase từ chối ghi nhánh chat_rooms (Rules). Vào Console → Realtime Database → Rules, thêm quyền cho chat_rooms (xem file database.rules.json trong project), rồi Publish. Nếu dùng FIREBASE_RTDB_AUTH, kiểm tra token/secret.'
+                        else if (st) msg += ' HTTP ' + st + '.'
+                        if (fb && !perm) msg += ' ' + fb.slice(0, 160)
+                        setModalError(msg)
+                    } else if (payload.detail) setModalError(String(payload.detail))
+                    else setModalError((payload.error && String(payload.error)) || 'Không tạo được đoạn chat.')
+                    return
+                }
+                const ch = (payload.channel || '').trim().toLowerCase()
+                setOpen(false)
+                lastChannelsKey = ''
+                await syncThreadListFromServer()
+                await selectChatChannel(ch)
+            } catch (_) {
+                setModalError('Lỗi mạng. Thử lại.')
+            } finally {
+                submit.disabled = false
+            }
+        })
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal && !modal.hidden) {
             e.preventDefault()
             setOpen(false)
         }

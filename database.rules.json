@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "messages": {
+      ".read": true,
+      ".write": true
+    },
+    "users": {
+      ".read": true,
+      ".write": true
+    },
+    "chat_rooms": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
