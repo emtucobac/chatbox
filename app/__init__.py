@@ -46,13 +46,14 @@ def create_app(config_class: type = Config) -> Flask:
 
     # Render / reverse proxy: nhận đúng Host và HTTPS để redirect & cookie hoạt động.
     if os.environ.get("TRUST_PROXY", "true").lower() not in ("0", "false", "no"):
+        # Không bật x_prefix: header X-Forwarded-Prefix (nếu sai / bị chèn) làm SCRIPT_NAME lệch
+        # → Flask khớp route kiểu /login thất bại → 404 “lâu lâu” mới gặp. App deploy tại / trên Render.
         app.wsgi_app = ProxyFix(  # type: ignore[method-assign]
             app.wsgi_app,
             x_for=1,
             x_proto=1,
             x_host=1,
             x_port=1,
-            x_prefix=1,
         )
 
     if _running_on_render():
